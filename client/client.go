@@ -44,6 +44,7 @@ func main() {
 	//TODO Try to connect to the server
 	//TODO Start asynchronously reading and displaying messages
 	//TODO Start getting and sending user messages.
+	fmt.Println("Dialing ", *addrPtr)
 	conn, err := net.Dial("tcp", *addrPtr)
 	for err != nil {
 		fmt.Println(err, ", couldn't reach server, trying again in 2 seconds")
