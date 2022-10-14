@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"log"
 	"net"
 )
 
@@ -22,10 +23,10 @@ func acceptConns(ln net.Listener, conns chan net.Conn) {
 	// Continuously accept a network connection from the Listener
 	// and add it to the channel for handling connections.
 	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			handleError(err)
-		}
+		conn, _ := ln.Accept()
+		//if err != nil {
+		//	handleError(err)
+		//}
 		conns <- conn
 	}
 }
@@ -36,10 +37,13 @@ func handleClient(client net.Conn, clientid int, msgs chan Message) {
 	// Read in new messages as delimited by '\n's
 	// Tidy up each message and add it to the messages channel,
 	// recording which client it came from.
+	fmt.Println("SERVER: connected User: ", clientid)
 	for {
 		reader := bufio.NewReader(client)
-		msg, _ := reader.ReadString('\n')
-		// TODO: are we supposed to do the formatting here or not?
+		msg, err := reader.ReadString('\n')
+		if err != nil {
+			log.Fatal(err, ", couldn't read string from client")
+		}
 		msgs <- Message{clientid, fmt.Sprint("User ", clientid, ": ", msg)}
 	}
 }
@@ -52,6 +56,7 @@ func main() {
 
 	//TODO Create a Listener for TCP connections on the port given above.
 	ln, _ := net.Listen("tcp", *portPtr)
+	fmt.Println("SERVER: listening on ", *portPtr)
 
 	//Create a channel for connections
 	conns := make(chan net.Conn)
@@ -77,9 +82,9 @@ func main() {
 			// Send the message to all clients that aren't the sender
 			for i, conn := range clients {
 				if i != msg.sender {
-					fmt.Fprintln(conn, msg)
+					fmt.Fprint(conn, msg)
 				} else {
-					fmt.Fprintln(conn, "message was received by server")
+					fmt.Fprintln(conn, "SERVER: message was received by server")
 				}
 			}
 		}

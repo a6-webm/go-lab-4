@@ -6,13 +6,18 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"time"
 )
 
 func read(conn net.Conn) {
 	//TODO In a continuous loop, read a message from the server and display it.
 	reader := bufio.NewReader(conn)
 	for {
-		msg, _ := reader.ReadString('\n')
+		msg, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Println(err, ", couldn't read from server")
+			time.Sleep(2 * time.Second)
+		}
 		fmt.Println(msg)
 	}
 }
@@ -21,8 +26,14 @@ func write(conn net.Conn) {
 	//TODO Continually get input from the user and send messages to the server.
 	stdin := bufio.NewReader(os.Stdin)
 	for {
-		msg, _ := stdin.ReadString('\n')
-		conn.Write([]byte(msg))
+		msg, err := stdin.ReadString('\n')
+		if err != nil {
+			fmt.Println(err, ", couldn't read from stdin")
+		}
+		_, err = conn.Write([]byte(msg))
+		if err != nil {
+			fmt.Println(err, ", couldn't write to server")
+		}
 	}
 }
 
@@ -33,8 +44,14 @@ func main() {
 	//TODO Try to connect to the server
 	//TODO Start asynchronously reading and displaying messages
 	//TODO Start getting and sending user messages.
-	conn, _ := net.Dial("tcp", *addrPtr)
+	conn, err := net.Dial("tcp", *addrPtr)
+	for err != nil {
+		fmt.Println(err, ", couldn't reach server, trying again in 2 seconds")
+		time.Sleep(2 * time.Second)
+		conn, err = net.Dial("tcp", *addrPtr)
+	}
 
+	fmt.Println("Connected to ", *addrPtr)
 	go write(conn)
 	go read(conn)
 	for {
